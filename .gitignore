@@ -23,6 +23,8 @@
 /Game/[Bb]uilds/
 /Game/[Ll]ogs/
 /Game/[Mm]emoryCaptures/
+/Game/[Uu]ser[Ss]ettings/
+/Game/[Pp]roject[Ss]ettings/
 
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta
