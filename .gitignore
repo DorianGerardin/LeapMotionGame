@@ -2,6 +2,20 @@
 #
 # Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
 #
+
+.ssh/
+./*.sublime-project
+./*.sublime-workspace
+.vs/
+
+# Unity Part gitignore
+
+/blankGame/.vscode/
+/blankGame/.vsconfig/
+/blankGame/*.sublime-project
+/blankGame/*.sublime-workspace
+/blankGame//Capture/
+
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
