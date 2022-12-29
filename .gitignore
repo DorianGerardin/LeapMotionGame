@@ -7,7 +7,7 @@
 /Game/./*.sublime-project
 /Game/./*.sublime-workspace
 /Game/.vs/
-/Game/.idea/*.idea
+/Game/.idea/*
 
 # Unity Part gitignore
 
