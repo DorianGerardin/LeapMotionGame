@@ -60,7 +60,7 @@ public class Player : MonoBehaviour
         _initialScale = transform.localScale;
         _canJump = false;
         _canScaleDown = false;
-        _canBeInvincible = true;
+        _canBeInvincible = false;
         _canDestructObstacles = false;
         _areControlsInversed = false;
     }
@@ -221,10 +221,9 @@ public class Player : MonoBehaviour
         hasPowerUpToUse = true;
     }
 
-    public void InverseControls(float duration)
+    public void InverseControls(float duration, float delay)
     {
-        _areControlsInversed = true;
-        StartCoroutine(MakeControlsBackAfterDelay(duration));
+        StartCoroutine(HandleControlsInversion(delay, duration));
         Debug.Log("InverseControls");
     }
 
@@ -277,9 +276,13 @@ public class Player : MonoBehaviour
         }
     }
     
-    IEnumerator MakeControlsBackAfterDelay(float delay)
+    IEnumerator HandleControlsInversion(float delay, float duration)
     {
         yield return new WaitForSeconds(delay);
+        _areControlsInversed = true;
+
+        yield return new WaitForSeconds(duration);
+        
         _areControlsInversed = false;
         yield return null;
         
@@ -295,5 +298,5 @@ public class Player : MonoBehaviour
         yield return null;
         
     }
-    
+
 }

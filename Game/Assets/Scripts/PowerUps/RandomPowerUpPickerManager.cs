@@ -12,11 +12,11 @@ namespace PowerUps
         {
             _powerUps = new List<IPowerUp>
             {
-                //new JumpPowerUp(player),
+                new JumpPowerUp(player),
                 new InvinciblePowerUp(10f, player),
-                //new ScaleDownPowerUp(10f, player),
-                //new InverseControlsPowerUp(10f, player),
-                //new DestructObstaclesPowerUp(player)
+                new ScaleDownPowerUp(10f, player),
+                new InverseControlsPowerUp(10f, player, 3f),
+                new DestructObstaclesPowerUp(player)
             };
         }
 

@@ -191,7 +191,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aaaaaf2541d4eb84a8805f644938dc0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  forwardForce: 600
+  forwardForce: 1200
   obstaclesTypes:
   - {fileID: 8835944368121648646, guid: 50cd55d8c0fc7984296a9a88d4e1336c, type: 3}
   - {fileID: 1762581742649056106, guid: 0b24929e49fd2cb44bec52aa7982b719, type: 3}
