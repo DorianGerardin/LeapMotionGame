@@ -10,6 +10,7 @@ public class GroundMovement : MonoBehaviour
     public List<GameObject> obstaclesTypes;
     public GameObject powerUpPrefab;
     public Player player;
+    public GameObject tileBefore;
     
     private Rigidbody _body;
     private Vector3 _newPosition;
@@ -34,7 +35,9 @@ public class GroundMovement : MonoBehaviour
     void Update()
     {
         if(transform.position.z <= -50f) {
-            transform.position = new Vector3(0f, 0f, 550f);
+            //transform.position = new Vector3(0f, 0f, 550f);
+            transform.position = tileBefore.transform.position + new Vector3(0f, 0f, 100f);
+            //_body.AddForce(0f, 0f, -forwardForce * 2 * Time.deltaTime, ForceMode.VelocityChange);
             UpdateObstacles();
             UpdatePowersUp();
         }

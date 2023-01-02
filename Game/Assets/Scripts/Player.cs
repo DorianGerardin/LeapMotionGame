@@ -2,9 +2,13 @@ using Leap;
 using Leap.Unity;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using Image = UnityEngine.UI.Image;
+
 
 public class Player : MonoBehaviour
 {
@@ -18,6 +22,17 @@ public class Player : MonoBehaviour
     public Transform toTop;
     public Transform toDefault;
     public PlayerCollision playerCollision;
+    public GameObject powerUpDisplayGameObject;
+    public Sprite defautPowerUpImage;
+    public GameObject powerLabelGameObject;
+    public Material originalMat;
+    public Material transparentMat;
+    public GameObject ufoRoot;
+    public GameObject timeRemainingUI;
+    public Slider timeRemainingSlider;
+    public Slider timeRemainingMalusSlider;
+    public TextMeshProUGUI countDown;
+    public Animator gestureAnimator;
 
     private Rigidbody _body;
     public Rigidbody GetBody => _body;
@@ -30,7 +45,7 @@ public class Player : MonoBehaviour
     private float _rightThreshold = 20f;
     private float _leftThreshold = 15f;
     private Vector3 _initialScale;
-    
+
     //Power Ups
     public bool hasPowerUpToUse;
     private bool _canJump;
@@ -38,8 +53,25 @@ public class Player : MonoBehaviour
     private bool _canBeInvincible;
     private bool _canDestructObstacles;
     private bool _areControlsInversed;
+    public bool AreControlsInversed => _areControlsInversed;
+    private Image _powerUpDisplay;
+    private TextMeshProUGUI _powerLabel;
+    private bool _isInvincible;
+    private float _currentLerpTimeMaterial = 0f;
+    private int _currentMaterialSwitchIndex = 0;
+    private float _currentTimeForPowerUp;
+    private float _invincibilityDuration;
+    private float _scaleDownDuration;
+    private bool _isScaledDown;
+    private float _inverseControlsDuration;
+    
+    private string _destructionAnimation;
+    private string _jumpingAnimation;
+    private string _invincibleAnimation;
+    private string _pinchingAnimation;
 
     public LeapServiceProvider LeapServiceProvider;
+    
 
     private void OnEnable()
     {
@@ -52,6 +84,8 @@ public class Player : MonoBehaviour
 
     private void Awake() {
         _body = GetComponent<Rigidbody>();
+        _powerUpDisplay = powerUpDisplayGameObject.transform.GetComponent<Image>();
+        _powerLabel = powerLabelGameObject.transform.GetComponent<TextMeshProUGUI>();
     }
 
     // Start is called before the first frame update
@@ -63,6 +97,16 @@ public class Player : MonoBehaviour
         _canBeInvincible = false;
         _canDestructObstacles = false;
         _areControlsInversed = false;
+        _isInvincible = false;
+        _isScaledDown = false;
+        _currentTimeForPowerUp = 0f;
+        _invincibilityDuration = 7f;
+        _scaleDownDuration = 5f;
+        _inverseControlsDuration = 5f;
+        _destructionAnimation = "isDestruction";
+        _invincibleAnimation = "isInvincible";
+        _jumpingAnimation = "isJump";
+        _pinchingAnimation = "isPinch";
     }
 
     void OnUpdateFrame(Frame frame)
@@ -84,24 +128,32 @@ public class Player : MonoBehaviour
                 Vector3 handRotation = hand.Rotation.eulerAngles;
                 //Jump
                 if((handRotation.x is <= 320f and >= 250f || hand.PalmPosition.y >= 1.9f) && _canJump) {
+                    gestureAnimator.SetBool(_jumpingAnimation, false);
                     _hasJumped = true;
+                    foreach (Transform rot in ufoRoot.transform) {
+                        foreach (Transform ufoElement in rot.transform) {
+                            if (ufoElement.name[0] == 'U') {
+                                ufoElement.GetComponent<MeshRenderer>().material = transparentMat;
+                            }
+                        }
+                    }
                 }
                 
                 //Scale down
                 if (_canScaleDown && hand.IsPinching())
                 {
+                    gestureAnimator.SetBool(_pinchingAnimation, false);
                     hasPowerUpToUse = true;
-                    //StartCoroutine(ScaleDownCoroutine());
-                    StartCoroutine(ScaleDownAndUpAfterDelay(2f));
+                    StartCoroutine(ScaleDownAndUpAfterDelay(_scaleDownDuration));
                     _canScaleDown = false;
                 }
                 
                 //Destruct Obstacles
                 if (_canDestructObstacles && hand.GrabStrength >= 0.99)
                 {
+                    gestureAnimator.SetBool(_destructionAnimation, false);
                     hasPowerUpToUse = true;
                     float sphereRadius = 100f;
-                    //StartCoroutine(Explosion(sphereRadius));
                     Collider[] hitColliders = Physics.OverlapSphere(transform.position, sphereRadius);
                     foreach (var hitCollider in hitColliders) {
                         if (hitCollider.CompareTag("Obstacle")) {
@@ -117,9 +169,13 @@ public class Player : MonoBehaviour
                 }
                 
                 //Invincibility
-                if (_canBeInvincible)
+                if (_canBeInvincible && handRotation.z is >= 160f and <= 190f)
                 {
-                    StartCoroutine(RemoveCollisionForADuration(7f));
+                    gestureAnimator.SetBool(_invincibleAnimation, false);
+                    timeRemainingUI.SetActive(true);
+                    _canBeInvincible = false;
+                    _isInvincible = true;
+                    StartCoroutine(RemoveCollisionForADuration(_invincibilityDuration));
                 }
             }
         }
@@ -128,7 +184,34 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!hasPowerUpToUse)
+        {
+            _powerUpDisplay.sprite = defautPowerUpImage;
+            _powerLabel.text = "Pouvoir";
+        }
+        
+        if (_isInvincible) {
+            SwitchMaterialByInterval(0.2f);
+            timeRemainingSlider.value = _currentTimeForPowerUp / _invincibilityDuration;
+            _currentTimeForPowerUp += Time.deltaTime;
+        }
+        else {
+            SetMaterial(originalMat);
+        }
 
+        if (_isScaledDown) {
+            timeRemainingSlider.value = _currentTimeForPowerUp / _scaleDownDuration;
+            _currentTimeForPowerUp += Time.deltaTime;
+        }
+
+        if (_areControlsInversed) {
+            timeRemainingMalusSlider.value = _currentTimeForPowerUp / _inverseControlsDuration;
+            _currentTimeForPowerUp += Time.deltaTime;
+        }
+
+        if (_isFalling) {
+            SetMaterial(transparentMat);
+        }
     }
 
     void FixedUpdate() {
@@ -189,6 +272,7 @@ public class Player : MonoBehaviour
             if (_isFalling) {
                 _isFalling = false;
                 hasPowerUpToUse = false;
+                SetMaterial(originalMat);
             }
         }
     }
@@ -209,7 +293,7 @@ public class Player : MonoBehaviour
 
     public void Invincible()
     {
-        Debug.Log("Invicible");
+        Debug.Log("Invincibleeeeee");
         _canBeInvincible = true;
         hasPowerUpToUse = true;
     }
@@ -223,13 +307,13 @@ public class Player : MonoBehaviour
 
     public void InverseControls(float duration, float delay)
     {
-        StartCoroutine(HandleControlsInversion(delay, duration));
+        StartCoroutine(HandleControlsInversion(delay, _inverseControlsDuration));
         Debug.Log("InverseControls");
     }
 
     IEnumerator ScaleDownAndUpAfterDelay(float delay)
     {
-        float epsilon = 0.01f;
+        float epsilon = 0.5f;
         float scaledownSpeed = 5f;
         Vector3 newScale = _initialScale / 4f;
         while (transform.localScale.x > newScale.x)
@@ -238,6 +322,8 @@ public class Player : MonoBehaviour
             if (Mathf.Abs(transform.localScale.x - newScale.x) <= epsilon)
             {
                 transform.localScale = newScale;
+                timeRemainingUI.SetActive(true);
+                _isScaledDown = true;
             }
             yield return null;
         }
@@ -245,6 +331,8 @@ public class Player : MonoBehaviour
         yield return new WaitForSeconds(delay);
         
         hasPowerUpToUse = false;
+        _isScaledDown = false;
+        StopTimerDisplay();
         float scaleUpSpeed = 5f;
         while (transform.localScale.x < _initialScale.x)
         {
@@ -257,46 +345,98 @@ public class Player : MonoBehaviour
         }
     }
 
-    IEnumerator Explosion(float radius)
-    {
-        float epsilon = 0.01f;
-        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        sphere.tag = "Explosion";
-        sphere.transform.SetParent(transform, false);
-        sphere.transform.position = transform.position;
-        Vector3 targetScale = new Vector3(radius, radius, radius);
-        while (sphere.transform.localScale.x < radius)
-        {
-            sphere.transform.localScale = Vector3.Lerp(sphere.transform.localScale, targetScale, 2f * Time.deltaTime);
-            if (Mathf.Abs(sphere.transform.localScale.x - radius) <= epsilon)
-            {
-                sphere.transform.localScale = targetScale;
-            }
-            yield return null;
-        }
-    }
-    
     IEnumerator HandleControlsInversion(float delay, float duration)
     {
+        StartCoroutine(CountDown());
         yield return new WaitForSeconds(delay);
         _areControlsInversed = true;
+        timeRemainingMalusSlider.gameObject.SetActive(true);
 
         yield return new WaitForSeconds(duration);
         
+        SetMaterial(originalMat);
+        countDown.gameObject.SetActive(false);
         _areControlsInversed = false;
+        timeRemainingMalusSlider.gameObject.SetActive(false);
+        _currentTimeForPowerUp = 0f;
         yield return null;
         
     }
     
     IEnumerator RemoveCollisionForADuration(float duration)
     {
-        playerCollision.enabled = false;
+        GameObject[] obstacles = GameObject.FindGameObjectsWithTag("Obstacle");
+        List<BoxCollider> obstacleColliders = new List<BoxCollider>();
+        foreach (GameObject obstacle in obstacles) {
+            BoxCollider collider = obstacle.transform.GetComponent<BoxCollider>();
+            //obstacle.transform.GetComponent<BoxCollider>().enabled = false;
+            obstacleColliders.Add(collider);
+            obstacleColliders[^1].enabled = false;
+        }
         yield return new WaitForSeconds(duration);
-        playerCollision.enabled = true;
-        _canBeInvincible = false;
+        foreach (BoxCollider obstacleCollider in obstacleColliders) {
+            obstacleCollider.enabled = true;
+        }
+        _isInvincible = false;
         hasPowerUpToUse = false;
+        StopTimerDisplay();
         yield return null;
-        
+    }
+
+    private void SwitchMaterialByInterval(float interval)
+    {
+        if (_currentLerpTimeMaterial < interval)
+        {
+            _currentLerpTimeMaterial += Time.deltaTime;
+        }
+        else {
+            _currentLerpTimeMaterial = 0f;
+            _currentMaterialSwitchIndex = (_currentMaterialSwitchIndex + 1) % 2;
+        }
+        foreach (Transform rot in ufoRoot.transform) {
+            foreach (Transform ufoElement in rot.transform) {
+                if (ufoElement.name[0] == 'U') {
+                    MeshRenderer rend = ufoElement.GetComponent<MeshRenderer>();
+                    if (_currentMaterialSwitchIndex == 0) {
+                        rend.material = transparentMat;
+                    }
+                    else {
+                        rend.material = originalMat;
+                    }
+                }
+            }
+        }
+    }
+    
+    IEnumerator CountDown()
+    {
+        countDown.gameObject.SetActive(true);
+        countDown.fontSize = 180;
+        for (int i = 3; i > 0; i--)
+        {
+            countDown.text = i.ToString();
+            yield return new WaitForSeconds(1f);
+        }
+        countDown.fontSize = 80;
+        countDown.text = "Contrôles inversés!";
+        yield return null;
+    }
+
+    private void SetMaterial(Material mat)
+    {
+        foreach (Transform rot in ufoRoot.transform) {
+            foreach (Transform ufoElement in rot.transform) {
+                if (ufoElement.name[0] == 'U') {
+                    ufoElement.GetComponent<MeshRenderer>().material = mat;
+                }
+            }
+        }
+    }
+
+    private void StopTimerDisplay() {
+        _currentTimeForPowerUp = 0f;
+        timeRemainingUI.SetActive(false);
+        timeRemainingSlider.value = 0f;
     }
 
 }

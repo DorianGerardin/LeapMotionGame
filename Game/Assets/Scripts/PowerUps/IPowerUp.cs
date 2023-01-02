@@ -4,6 +4,8 @@ namespace PowerUps
     {
         Player Player { get; set; }
 
+        string Label { get; set; }
+
         void Execute();
     }
 }

@@ -6,10 +6,12 @@ namespace PowerUps.PowerUpsType
     public class InvinciblePowerUp : IPowerUp
     {
         public Player Player { get; set; }
+        public string Label { get; set; }
         
-        public InvinciblePowerUp(float duration, Player player)
+        public InvinciblePowerUp(string label, float duration, Player player)
         {
             Player = player;
+            Label = label;
         }
 
         public void Execute()
