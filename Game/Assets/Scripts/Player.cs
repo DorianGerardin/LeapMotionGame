@@ -45,6 +45,8 @@ public class Player : MonoBehaviour
     private float _rightThreshold = 20f;
     private float _leftThreshold = 15f;
     private Vector3 _initialScale;
+    private bool _isDead;
+    public bool IsDead { get => _isDead; set => _isDead = value; }
 
     //Power Ups
     public bool hasPowerUpToUse;
@@ -117,28 +119,36 @@ public class Player : MonoBehaviour
             {
                 Vector3 handRotation = hand.Rotation.eulerAngles;
                 //Sideway
-                if(!(handRotation.z >= 360f - _rightThreshold || handRotation.z <= _leftThreshold)) {
-                    if(handRotation.z <= 180) _rotationZ = -1; 
-                    else _rotationZ = 1; 
-                } else {
+                if (!(handRotation.z >= 360f - _rightThreshold || handRotation.z <= _leftThreshold))
+                {
+                    if (handRotation.z <= 180) _rotationZ = -1;
+                    else _rotationZ = 1;
+                }
+                else
+                {
                     _rotationZ = 0;
                 }
-            } else
+            }
+            else
             {
                 Vector3 handRotation = hand.Rotation.eulerAngles;
                 //Jump
-                if((handRotation.x is <= 320f and >= 250f || hand.PalmPosition.y >= 1.9f) && _canJump) {
+                if ((handRotation.x is <= 320f and >= 250f || hand.PalmPosition.y >= 1.9f) && _canJump)
+                {
                     gestureAnimator.SetBool(_jumpingAnimation, false);
                     _hasJumped = true;
-                    foreach (Transform rot in ufoRoot.transform) {
-                        foreach (Transform ufoElement in rot.transform) {
-                            if (ufoElement.name[0] == 'U') {
+                    foreach (Transform rot in ufoRoot.transform)
+                    {
+                        foreach (Transform ufoElement in rot.transform)
+                        {
+                            if (ufoElement.name[0] == 'U')
+                            {
                                 ufoElement.GetComponent<MeshRenderer>().material = transparentMat;
                             }
                         }
                     }
                 }
-                
+
                 //Scale down
                 if (_canScaleDown && hand.IsPinching())
                 {
@@ -147,7 +157,7 @@ public class Player : MonoBehaviour
                     StartCoroutine(ScaleDownAndUpAfterDelay(_scaleDownDuration));
                     _canScaleDown = false;
                 }
-                
+
                 //Destruct Obstacles
                 if (_canDestructObstacles && hand.GrabStrength >= 0.99)
                 {
@@ -155,19 +165,24 @@ public class Player : MonoBehaviour
                     hasPowerUpToUse = true;
                     float sphereRadius = 100f;
                     Collider[] hitColliders = Physics.OverlapSphere(transform.position, sphereRadius);
-                    foreach (var hitCollider in hitColliders) {
-                        if (hitCollider.CompareTag("Obstacle")) {
+                    foreach (var hitCollider in hitColliders)
+                    {
+                        if (hitCollider.CompareTag("Obstacle"))
+                        {
                             hitCollider.AddComponent<Rigidbody>();
                             Vector3 direction = hitCollider.transform.position - transform.position;
                             float force = 3f;
-                            hitCollider.GetComponent<Rigidbody>().AddForce(direction.x * 4f * force, (direction.y + 15f) * force, direction.z * force, ForceMode.Impulse);
-                            hitCollider.GetComponent<Rigidbody>().AddTorque(direction.x * force,15f, 5f, ForceMode.Impulse);
+                            hitCollider.GetComponent<Rigidbody>().AddForce(direction.x * 4f * force,
+                                (direction.y + 15f) * force, direction.z * force, ForceMode.Impulse);
+                            hitCollider.GetComponent<Rigidbody>()
+                                .AddTorque(direction.x * force, 15f, 5f, ForceMode.Impulse);
                         }
                     }
+
                     _canDestructObstacles = false;
                     hasPowerUpToUse = false;
                 }
-                
+
                 //Invincibility
                 if (_canBeInvincible && handRotation.z is >= 160f and <= 190f)
                 {
@@ -212,6 +227,7 @@ public class Player : MonoBehaviour
         if (_isFalling) {
             SetMaterial(transparentMat);
         }
+        
     }
 
     void FixedUpdate() {

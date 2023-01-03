@@ -36,7 +36,7 @@ public class PlayerCollision : MonoBehaviour
         if (collisionInfo.collider.CompareTag("Respawn") || collisionInfo.collider.CompareTag("Obstacle"))
         {
             Debug.Log("collision obstacle");
-            Respawn();
+            Die();
         }
         
     }
@@ -102,8 +102,9 @@ public class PlayerCollision : MonoBehaviour
     {
     }
     
-    private void Respawn()
+    private void Die()
     {
-        SceneManager.LoadScene(0);
+        _player.IsDead = true;
+        SceneManager.LoadScene(2);
     }
 }
